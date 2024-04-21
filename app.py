@@ -1,6 +1,10 @@
+"""
 import pickle
 import streamlit as st
 import numpy as np
+
+
+
 
 
 st.header("Collaborative Recommender Component")
@@ -29,7 +33,6 @@ def fetch_poster(suggestion):
         poster_url.append(url)
 
     return poster_url
-
 
 
 
@@ -76,5 +79,42 @@ if st.button('Show recommendations'):
     with col1:
         st.text(recommendation_books[5])
         st.image(poster_url[5])
+"""
+import pickle
+from fastapi import FastAPI
+from typing import List
 
+import numpy as np
+
+app = FastAPI()
+
+# Load pickled models and data
+model = pickle.load(open('artifacts/model.pkl', 'rb'))
+book_name = pickle.load(open('artifacts/book_name.pkl', 'rb'))
+final_rating = pickle.load(open('artifacts/final_rating.pkl', 'rb'))
+book_pivot = pickle.load(open('artifacts/book_pivot.pkl', 'rb'))
+
+def fetch_poster(suggestion):
+    # Fetch poster URLs based on book suggestions
+    # Implementation remains the same as in the original code
+    pass
+
+def recommend_books(book_name: str) -> List[str]:
+    # Recommend books based on selected book name
+    # Modify the function to accept book names as input
+    book_list = []
+    book_id = np.where(book_pivot.index == book_name)[0][0]
+    distance, suggestion = model.kneighbors(book_pivot.iloc[book_id,:].values.reshape(1,-1), n_neighbors=6)
+
+    for i in range(len(suggestion)):
+        books = book_pivot.index[suggestion[i]]
+        for j in books:
+            book_list.append(j)
+    return book_list
+
+@app.get("/recommend")
+async def recommend(selected_book: str):
+    # Endpoint route to recommend books
+    recommendation_books = recommend_books(selected_book)
+    return {"recommendations": recommendation_books}
 
